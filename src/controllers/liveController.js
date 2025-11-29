@@ -6,24 +6,21 @@ const urlBuilder = require('../utils/urlBuilder');
  */
 class LiveController {
     /**
-     * Obtiene todas las categorías de canales en vivo
-     * POST /api/live/categories
-     * Body: { url, username, password }
-     */
+   * Obtiene todas las categorías de canales en vivo
+   * POST /api/live/categories
+   * Header: Authorization: Bearer <token>
+   */
     async getCategories(req, res, next) {
         try {
-            const { url, username, password } = req.body;
+            // Obtener credenciales del usuario autenticado
+            const credentials = req.user.getDecryptedCredentials();
 
-            // Validar parámetros
-            if (!url || !username || !password) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Missing required parameters: url, username, password'
-                });
-            }
-
-            // Obtener categorías
-            const categories = await xtreamService.getLiveCategories(url, username, password);
+            // Obtener categorías usando credenciales almacenadas
+            const categories = await xtreamService.getLiveCategories(
+                credentials.url,
+                credentials.username,
+                credentials.password
+            );
 
             return res.status(200).json({
                 success: true,
@@ -37,22 +34,13 @@ class LiveController {
     }
 
     /**
-     * Obtiene los streams de una categoría específica
-     * POST /api/live/streams/:category_id
-     * Body: { url, username, password }
-     */
+   * Obtiene los streams de una categoría específica
+   * POST /api/live/streams/:category_id
+   * Header: Authorization: Bearer <token>
+   */
     async getStreams(req, res, next) {
         try {
             const { category_id } = req.params;
-            const { url, username, password } = req.body;
-
-            // Validar parámetros
-            if (!url || !username || !password) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Missing required parameters: url, username, password'
-                });
-            }
 
             if (!category_id) {
                 return res.status(400).json({
@@ -61,15 +49,23 @@ class LiveController {
                 });
             }
 
-            // Obtener streams
-            const streams = await xtreamService.getLiveStreams(url, username, password, category_id);
+            // Obtener credenciales del usuario autenticado
+            const credentials = req.user.getDecryptedCredentials();
+
+            // Obtener streams usando credenciales almacenadas
+            const streams = await xtreamService.getLiveStreams(
+                credentials.url,
+                credentials.username,
+                credentials.password,
+                category_id
+            );
 
             // Enriquecer cada stream con la URL reproducible
             const enrichedStreams = streams.map(stream => {
                 const streamUrl = urlBuilder.buildLiveUrl(
-                    url,
-                    username,
-                    password,
+                    credentials.url,
+                    credentials.username,
+                    credentials.password,
                     stream.stream_id || stream.id,
                     stream.container_extension || 'ts'
                 );
@@ -77,7 +73,7 @@ class LiveController {
                 return {
                     ...stream,
                     stream_url: streamUrl,
-                    icon_url: stream.stream_icon ? urlBuilder.buildIconUrl(url, stream.stream_icon) : null
+                    icon_url: stream.stream_icon ? urlBuilder.buildIconUrl(credentials.url, stream.stream_icon) : null
                 };
             });
 
@@ -94,31 +90,28 @@ class LiveController {
     }
 
     /**
-     * Obtiene todos los streams sin filtro de categoría
-     * POST /api/live/streams
-     * Body: { url, username, password }
-     */
+   * Obtiene todos los streams sin filtro de categoría
+   * POST /api/live/streams
+   * Header: Authorization: Bearer <token>
+   */
     async getAllStreams(req, res, next) {
         try {
-            const { url, username, password } = req.body;
-
-            // Validar parámetros
-            if (!url || !username || !password) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Missing required parameters: url, username, password'
-                });
-            }
+            // Obtener credenciales del usuario autenticado
+            const credentials = req.user.getDecryptedCredentials();
 
             // Obtener todos los streams
-            const streams = await xtreamService.getAllLiveStreams(url, username, password);
+            const streams = await xtreamService.getAllLiveStreams(
+                credentials.url,
+                credentials.username,
+                credentials.password
+            );
 
             // Enriquecer streams con URLs
             const enrichedStreams = streams.map(stream => {
                 const streamUrl = urlBuilder.buildLiveUrl(
-                    url,
-                    username,
-                    password,
+                    credentials.url,
+                    credentials.username,
+                    credentials.password,
                     stream.stream_id || stream.id,
                     stream.container_extension || 'ts'
                 );
@@ -126,7 +119,7 @@ class LiveController {
                 return {
                     ...stream,
                     stream_url: streamUrl,
-                    icon_url: stream.stream_icon ? urlBuilder.buildIconUrl(url, stream.stream_icon) : null
+                    icon_url: stream.stream_icon ? urlBuilder.buildIconUrl(credentials.url, stream.stream_icon) : null
                 };
             });
 

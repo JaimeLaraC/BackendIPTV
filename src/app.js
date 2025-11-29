@@ -1,9 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+const database = require('./config/database');
 
 // Importar rutas
-const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
 const liveRoutes = require('./routes/liveRoutes');
 const vodRoutes = require('./routes/vodRoutes');
 
@@ -40,12 +41,18 @@ app.get('/health', (req, res) => {
         success: true,
         message: 'IPTV Backend API is running',
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development'
+        environment: process.env.NODE_ENV || 'development',
+        database: database.isConnected() ? 'connected' : 'disconnected'
     });
 });
 
+// Conectar base de datos
+database.connect().catch(err => {
+    console.error('Failed to connect to database:', err);
+});
+
 // Rutas principales
-app.use('/api', authRoutes);
+app.use('/api/auth', userRoutes);
 app.use('/api/live', liveRoutes);
 app.use('/api/vod', vodRoutes);
 
@@ -56,16 +63,22 @@ app.use('*', (req, res) => {
         error: 'Endpoint not found',
         path: req.originalUrl,
         availableEndpoints: {
-            auth: 'POST /api/login',
+            auth: [
+                'POST /api/auth/register',
+                'POST /api/auth/login',
+                'GET /api/auth/profile (requires token)',
+                'PUT /api/auth/iptv-credentials (requires token)',
+                'DELETE /api/auth/account (requires token)'
+            ],
             live: [
-                'POST /api/live/categories',
-                'POST /api/live/streams',
-                'POST /api/live/streams/:category_id'
+                'POST /api/live/categories (requires token)',
+                'POST /api/live/streams (requires token)',
+                'POST /api/live/streams/:category_id (requires token)'
             ],
             vod: [
-                'POST /api/vod/categories',
-                'POST /api/vod/streams/:category_id',
-                'POST /api/vod/info/:vod_id'
+                'POST /api/vod/categories (requires token)',
+                'POST /api/vod/streams/:category_id (requires token)',
+                'POST /api/vod/info/:vod_id (requires token)'
             ]
         }
     });
