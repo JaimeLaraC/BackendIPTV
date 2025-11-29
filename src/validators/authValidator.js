@@ -72,7 +72,7 @@ const loginValidator = [
 /**
  * Validador para actualización de credenciales IPTV
  */
-const updateIptvCredentialsValidator = [
+const updateCredentialsValidator = [
     body('iptv_url')
         .optional()
         .isURL({ require_protocol: true })
@@ -96,5 +96,5 @@ const updateIptvCredentialsValidator = [
 module.exports = {
     registerValidator,
     loginValidator,
-    updateIptvCredentialsValidator
+    updateCredentialsValidator
 };

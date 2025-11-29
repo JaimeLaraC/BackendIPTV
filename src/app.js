@@ -11,8 +11,20 @@ const vodRoutes = require('./routes/vodRoutes');
 // Importar middleware
 const errorHandler = require('./middleware/errorHandler');
 
+const compression = require('compression');
+const setupSecurity = require('./middleware/security');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpecs = require('./config/swagger');
+const logger = require('./utils/logger');
+
 // Crear aplicación Express
 const app = express();
+
+// Implementar seguridad (Helmet, Rate Limit, Sanitize, XSS, HPP)
+setupSecurity(app);
+
+// Implementar compresión Gzip
+app.use(compression());
 
 // Middleware de CORS
 const corsOptions = {
@@ -24,13 +36,13 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Middleware para parsear JSON
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10kb' })); // Limit body size
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 // Logging middleware (solo en development)
 if (process.env.NODE_ENV === 'development') {
     app.use((req, res, next) => {
-        console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+        logger.info(`${req.method} ${req.path}`);
         next();
     });
 }
@@ -50,6 +62,13 @@ app.get('/health', (req, res) => {
 database.connect().catch(err => {
     console.error('Failed to connect to database:', err);
 });
+
+// Conectar Redis
+const { connectRedis } = require('./config/redis');
+connectRedis();
+
+// Swagger Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
 // Rutas principales
 app.use('/api/auth', userRoutes);

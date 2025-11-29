@@ -1,27 +1,42 @@
 # Backend IPTV - Xtream Codes API
 
-Backend middleware Node.js/Express para aplicaciones IPTV que utiliza el protocolo Xtream Codes API. Actúa como intermediario entre el frontend y servidores IPTV, resolviendo problemas de CORS y proporcionando endpoints JSON estructurados.
+Backend profesional Node.js/Express para aplicaciones IPTV que utiliza el protocolo Xtream Codes API. Sistema completo con autenticación JWT, gestión de usuarios, caché Redis y documentación interactiva.
 
 ## 🚀 Características
 
-- ✅ Autenticación con Xtream Codes API
-- 📺 Gestión de canales en vivo (Live TV)
-- 🎬 Gestión de contenido VOD (películas/series)
-- 🔄 Construcción automática de URLs de streaming
-- 🛡️ Manejo centralizado de errores
-- 🌐 CORS habilitado para integración frontend
-- 📝 Respuestas JSON estructuradas
+### Core
+- 🔐 **Autenticación JWT** - Sistema seguro de sesiones con tokens
+- 👤 **Gestión de Usuarios** - Registro, login, perfil y actualización de credenciales
+- 🗄️ **Base de Datos MongoDB** - Almacenamiento seguro de usuarios y credenciales IPTV encriptadas
+- 📺 **Canales en Vivo (Live TV)** - Gestión completa de categorías y streams
+- 🎬 **Video On Demand (VOD)** - Películas, series y contenido bajo demanda
+- 🔄 **URLs de Streaming** - Construcción automática de URLs reproducibles
+
+### Seguridad y Performance
+- 🛡️ **Helmet** - Cabeceras HTTP seguras
+- ⏱️ **Rate Limiting** - Protección contra ataques de fuerza bruta (100 req/15min)
+- 🧹 **Sanitización de Datos** - Protección contra inyecciones NoSQL y XSS
+- 🔒 **Encriptación AES-256** - Credenciales IPTV encriptadas en DB
+- ⚡ **Redis Cache** - Respuestas cacheadas (5-10 min) para máxima velocidad
+- 💨 **Compresión Gzip** - Reducción de ancho de banda
+
+### Observabilidad y Docs
+- 📝 **Winston Logger** - Logs profesionales en archivos
+- 📚 **Swagger UI** - Documentación interactiva de la API
+- 🌐 **CORS Configurable** - Integración segura con frontend
 
 ## 📋 Requisitos Previos
 
 - Node.js v14 o superior
+- MongoDB 4.4+ (local o remoto)
+- Redis 6+ (opcional pero recomendado para caché)
 - npm o yarn
 - Credenciales de acceso a un servidor Xtream Codes (URL, usuario, contraseña)
 
 ## 📦 Instalación
 
 ```bash
-# Clonar el repositorio (o descomprimir)
+# Clonar el repositorio
 cd BackendIPTV
 
 # Instalar dependencias
@@ -30,19 +45,69 @@ npm install
 # Copiar archivo de configuración
 cp .env.example .env
 
-# Editar .env si necesitas cambiar el puerto (opcional)
+# Editar .env con tus configuraciones
+nano .env
 ```
 
 ## ⚙️ Configuración
 
-Edita el archivo `.env` según tus necesidades:
+Edita el archivo `.env` con los siguientes valores:
 
 ```env
+# Server Configuration
 PORT=3000
 NODE_ENV=development
+
+# MongoDB Connection
+MONGODB_URI=mongodb://localhost:27017/iptv_backend
+
+# JWT Configuration
+JWT_SECRET=your_super_secret_jwt_key_here_min_32_chars
+JWT_EXPIRES_IN=7d
+
+# Encryption Key (debe ser exactamente 32 caracteres)
+ENCRYPTION_KEY=12345678901234567890123456789012
+
+# CORS Configuration
+ALLOWED_ORIGINS=http://localhost:8080,http://localhost:3001
+
+# Redis (opcional, para caché)
+REDIS_URL=redis://localhost:6379
 ```
 
-**Nota:** Las credenciales del servidor IPTV (URL, usuario, contraseña) se envían en cada petición desde el frontend, no están almacenadas en el backend.
+### Configuración de MongoDB
+
+#### Opción 1: MongoDB local
+```bash
+# Instalar MongoDB
+sudo apt-get install mongodb  # Ubuntu/Debian
+brew install mongodb-community  # macOS
+
+# Iniciar MongoDB
+sudo systemctl start mongod  # Linux
+brew services start mongodb-community  # macOS
+```
+
+#### Opción 2: MongoDB con Docker
+```bash
+docker run -d -p 27017:27017 --name mongodb mongo:latest
+```
+
+#### Opción 3: MongoDB Atlas (Cloud)
+1. Crea una cuenta en [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+2. Crea un cluster gratuito
+3. Actualiza `MONGODB_URI` con tu connection string
+
+### Configuración de Redis (Opcional)
+
+```bash
+# Opción 1: Redis con Docker (recomendado)
+docker run -d -p 6379:6379 --name redis redis:latest
+
+# Opción 2: Redis local
+sudo apt-get install redis-server  # Ubuntu/Debian
+brew install redis  # macOS
+```
 
 ## 🏃 Ejecución
 
@@ -64,21 +129,36 @@ El servidor iniciará en `http://localhost:3000` (o el puerto configurado en `.e
 BackendIPTV/
 ├── src/
 │   ├── controllers/           # Lógica de negocio
-│   │   ├── authController.js      # Autenticación
+│   │   ├── userController.js      # Gestión de usuarios
 │   │   ├── liveController.js      # Canales en vivo
 │   │   └── vodController.js       # Video on Demand
+│   ├── models/                # Modelos de MongoDB
+│   │   └── User.js                # Modelo de usuario
 │   ├── services/              # Servicios externos
 │   │   └── xtreamService.js       # Comunicación con API Xtream
 │   ├── routes/                # Definición de endpoints
-│   │   ├── authRoutes.js          # Rutas de autenticación
+│   │   ├── userRoutes.js          # Rutas de autenticación
 │   │   ├── liveRoutes.js          # Rutas de live TV
 │   │   └── vodRoutes.js           # Rutas de VOD
 │   ├── middleware/            # Middleware personalizado
+│   │   ├── auth.js                # Autenticación JWT
+│   │   ├── cache.js               # Middleware de caché Redis
+│   │   ├── security.js            # Configuración de seguridad
 │   │   └── errorHandler.js        # Manejo de errores
+│   ├── validators/            # Validadores de entrada
+│   │   └── authValidator.js       # Validación de registro/login
 │   ├── utils/                 # Utilidades
-│   │   └── urlBuilder.js          # Constructor de URLs
+│   │   ├── urlBuilder.js          # Constructor de URLs
+│   │   ├── encryption.js          # Encriptación AES-256
+│   │   ├── jwt.js                 # Utilidades JWT
+│   │   └── logger.js              # Logger Winston
+│   ├── config/                # Configuraciones
+│   │   ├── database.js            # Conexión MongoDB
+│   │   ├── redis.js               # Conexión Redis
+│   │   └── swagger.js             # Configuración Swagger
 │   └── app.js                 # Configuración de Express
 ├── server.js                  # Punto de entrada
+├── logs/                      # Logs de la aplicación
 ├── package.json
 ├── .env.example
 ├── .gitignore
@@ -86,6 +166,14 @@ BackendIPTV/
 ```
 
 ## 🔌 API Endpoints
+
+### 📄 Documentación Interactiva
+
+**Accede a Swagger UI en:** `http://localhost:3000/api-docs`
+
+Aquí podrás probar todos los endpoints de forma interactiva.
+
+---
 
 ### Health Check
 
@@ -98,25 +186,56 @@ Verifica que el servidor esté funcionando.
 {
   "success": true,
   "message": "IPTV Backend API is running",
-  "timestamp": "2025-11-29T22:30:00.000Z",
-  "environment": "development"
+  "timestamp": "2025-11-30T00:00:00.000Z",
+  "environment": "development",
+  "database": "connected"
 }
 ```
 
 ---
 
-### Autenticación
+### 👤 Autenticación y Usuarios
 
-#### POST `/api/login`
+#### POST `/api/auth/register`
 
-Autentica al usuario contra el servidor Xtream Codes.
+Registra un nuevo usuario con sus credenciales IPTV.
 
 **Request Body:**
 ```json
 {
-  "url": "http://example.com:8080",
-  "username": "your_username",
-  "password": "your_password"
+  "email": "usuario@example.com",
+  "password": "password123",
+  "iptv_url": "http://example.com:8080",
+  "iptv_username": "your_iptv_user",
+  "iptv_password": "your_iptv_pass"
+}
+```
+
+**Respuesta Exitosa (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "507f1f77bcf86cd799439011",
+      "email": "usuario@example.com"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+---
+
+#### POST `/api/auth/login`
+
+Inicia sesión y obtiene un token JWT.
+
+**Request Body:**
+```json
+{
+  "email": "usuario@example.com",
+  "password": "password123"
 }
 ```
 
@@ -125,54 +244,77 @@ Autentica al usuario contra el servidor Xtream Codes.
 {
   "success": true,
   "data": {
-    "user_info": {
-      "username": "your_username",
-      "password": "your_password",
-      "message": "Active",
-      "auth": 1,
-      "status": "Active",
-      "exp_date": "1735689600",
-      "is_trial": "0",
-      "active_cons": "1",
-      "created_at": "1640995200",
-      "max_connections": "2",
-      "allowed_output_formats": ["ts", "m3u8"]
+    "user": {
+      "id": "507f1f77bcf86cd799439011",
+      "email": "usuario@example.com"
     },
-    "server_info": {
-      "url": "example.com",
-      "port": "8080",
-      "https_port": "8081",
-      "server_protocol": "http",
-      "rtmp_port": "1935",
-      "time_now": "2025-11-29 22:30:00"
-    },
-    "expires_at": "1735689600",
-    "status": "Active"
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
   }
 }
 ```
 
-**Errores:**
-- `400` - Faltan parámetros obligatorios
-- `401` - Credenciales inválidas
-- `503` - No se puede conectar al servidor IPTV
-- `504` - Timeout de conexión
+---
+
+#### GET `/api/auth/profile`
+
+Obtiene el perfil del usuario autenticado (incluye credenciales IPTV desencriptadas).
+
+**Header Requerido:**
+```
+Authorization: Bearer <token>
+```
+
+**Respuesta (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "507f1f77bcf86cd799439011",
+      "email": "usuario@example.com",
+      "iptv_credentials": {
+        "url": "http://example.com:8080",
+        "username": "your_iptv_user",
+        "password": "your_iptv_pass"
+      }
+    }
+  }
+}
+```
 
 ---
 
-### Canales en Vivo
+#### PUT `/api/auth/iptv-credentials`
+
+Actualiza las credenciales IPTV del usuario.
+
+**Header Requerido:**
+```
+Authorization: Bearer <token>
+```
+
+**Request Body:**
+```json
+{
+  "iptv_url": "http://newserver.com:8080",
+  "iptv_username": "new_username",
+  "iptv_password": "new_password"
+}
+```
+
+---
+
+### 📺 Canales en Vivo (Live TV)
+
+**Nota:** Todos los endpoints de Live y VOD requieren autenticación JWT.
 
 #### POST `/api/live/categories`
 
 Obtiene todas las categorías de canales en vivo.
 
-**Request Body:**
-```json
-{
-  "url": "http://example.com:8080",
-  "username": "your_username",
-  "password": "your_password"
-}
+**Header Requerido:**
+```
+Authorization: Bearer <token>
 ```
 
 **Respuesta (200):**
@@ -184,16 +326,13 @@ Obtiene todas las categorías de canales en vivo.
       "category_id": "1",
       "category_name": "Deportes",
       "parent_id": 0
-    },
-    {
-      "category_id": "2",
-      "category_name": "Noticias",
-      "parent_id": 0
     }
   ],
-  "count": 2
+  "count": 1
 }
 ```
+
+**Caché:** 5 minutos
 
 ---
 
@@ -201,16 +340,9 @@ Obtiene todas las categorías de canales en vivo.
 
 Obtiene los canales de una categoría específica.
 
-**URL Params:**
-- `category_id` - ID de la categoría
-
-**Request Body:**
-```json
-{
-  "url": "http://example.com:8080",
-  "username": "your_username",
-  "password": "your_password"
-}
+**Header Requerido:**
+```
+Authorization: Bearer <token>
 ```
 
 **Respuesta (200):**
@@ -221,17 +353,8 @@ Obtiene los canales de una categoría específica.
     {
       "num": 1,
       "name": "ESPN HD",
-      "stream_type": "live",
       "stream_id": 12345,
-      "stream_icon": "http://example.com:8080/logos/espn.png",
-      "epg_channel_id": "ESPN.us",
-      "added": "1640995200",
-      "category_id": "1",
-      "custom_sid": "",
-      "tv_archive": 1,
-      "direct_source": "",
-      "tv_archive_duration": 7,
-      "stream_url": "http://example.com:8080/live/your_username/your_password/12345.ts",
+      "stream_url": "http://example.com:8080/live/username/password/12345.ts",
       "icon_url": "http://example.com:8080/logos/espn.png"
     }
   ],
@@ -240,54 +363,22 @@ Obtiene los canales de una categoría específica.
 }
 ```
 
----
-
-#### POST `/api/live/streams`
-
-Obtiene todos los canales sin filtro de categoría.
-
-**Request Body:**
-```json
-{
-  "url": "http://example.com:8080",
-  "username": "your_username",
-  "password": "your_password"
-}
-```
-
-**Respuesta:** Similar al endpoint anterior pero sin `category_id` en la respuesta.
+**Caché:** 5 minutos
 
 ---
 
-### Video On Demand (VOD)
+### 🎬 Video On Demand (VOD)
 
 #### POST `/api/vod/categories`
 
 Obtiene todas las categorías de VOD.
 
-**Request Body:**
-```json
-{
-  "url": "http://example.com:8080",
-  "username": "your_username",
-  "password": "your_password"
-}
+**Header Requerido:**
+```
+Authorization: Bearer <token>
 ```
 
-**Respuesta (200):**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "category_id": "10",
-      "category_name": "Acción",
-      "parent_id": 0
-    }
-  ],
-  "count": 1
-}
-```
+**Caché:** 10 minutos
 
 ---
 
@@ -295,156 +386,102 @@ Obtiene todas las categorías de VOD.
 
 Obtiene las películas/series de una categoría VOD.
 
-**URL Params:**
-- `category_id` - ID de la categoría
-
-**Request Body:**
-```json
-{
-  "url": "http://example.com:8080",
-  "username": "your_username",
-  "password": "your_password"
-}
+**Header Requerido:**
+```
+Authorization: Bearer <token>
 ```
 
-**Respuesta (200):**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "num": 1,
-      "name": "Película de Ejemplo",
-      "stream_type": "movie",
-      "stream_id": 54321,
-      "stream_icon": "http://example.com:8080/posters/movie.jpg",
-      "rating": "8.5",
-      "rating_5based": 4.25,
-      "added": "1640995200",
-      "category_id": "10",
-      "container_extension": "mp4",
-      "direct_source": "",
-      "stream_url": "http://example.com:8080/movie/your_username/your_password/54321.mp4",
-      "cover_url": "http://example.com:8080/posters/movie.jpg",
-      "backdrop_url": null
-    }
-  ],
-  "count": 1,
-  "category_id": "10"
-}
-```
+**Caché:** 10 minutos
 
 ---
 
 #### POST `/api/vod/info/:vod_id`
 
-Obtiene información detallada de un VOD específico (metadatos, cast, trama, etc.).
+Obtiene información detallada de un VOD específico.
 
-**URL Params:**
-- `vod_id` - ID del VOD
-
-**Request Body:**
-```json
-{
-  "url": "http://example.com:8080",
-  "username": "your_username",
-  "password": "your_password"
-}
+**Header Requerido:**
+```
+Authorization: Bearer <token>
 ```
 
-**Respuesta (200):**
-```json
-{
-  "success": true,
-  "data": {
-    "info": {
-      "tmdb_id": "123456",
-      "name": "Película de Ejemplo",
-      "o_name": "Example Movie",
-      "cover_big": "http://example.com:8080/posters/movie.jpg",
-      "releasedate": "2023-01-15",
-      "episode_run_time": "120",
-      "youtube_trailer": "https://youtube.com/watch?v=...",
-      "director": "Director Name",
-      "actors": "Actor 1, Actor 2",
-      "cast": "Cast info",
-      "description": "Movie description...",
-      "plot": "Detailed plot...",
-      "age": "PG-13",
-      "rating": "8.5",
-      "country": "USA",
-      "genre": "Action, Thriller",
-      "duration": "7200",
-      "backdrop_path": ["http://example.com:8080/backdrops/1.jpg"]
-    },
-    "movie_data": {
-      "stream_id": 54321,
-      "name": "Película de Ejemplo",
-      "container_extension": "mp4",
-      "stream_url": "http://example.com:8080/movie/your_username/your_password/54321.mp4"
-    }
-  }
-}
-```
+**Caché:** 10 minutos
 
 ---
 
 ## 🎯 Ejemplos de Uso desde el Frontend
 
-### Ejemplo con Fetch API (JavaScript)
+### Flujo Completo con JWT
 
 ```javascript
-// Login
-const login = async () => {
-  const response = await fetch('http://localhost:3000/api/login', {
+// 1. Registro de usuario
+const register = async () => {
+  const response = await fetch('http://localhost:3000/api/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      url: 'http://your-iptv-server.com:8080',
-      username: 'your_user',
-      password: 'your_pass'
+      email: 'user@example.com',
+      password: 'password123',
+      iptv_url: 'http://your-iptv-server.com:8080',
+      iptv_username: 'your_user',
+      iptv_password: 'your_pass'
     })
   });
   
   const data = await response.json();
-  console.log(data);
+  // Guardar token
+  localStorage.setItem('token', data.data.token);
 };
 
-// Obtener categorías de canales
-const getCategories = async () => {
-  const response = await fetch('http://localhost:3000/api/live/categories', {
+// 2. Login (si ya estás registrado)
+const login = async () => {
+  const response = await fetch('http://localhost:3000/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      url: 'http://your-iptv-server.com:8080',
-      username: 'your_user',
-      password: 'your_pass'
+      email: 'user@example.com',
+      password: 'password123'
     })
+  });
+  
+  const data = await response.json();
+  localStorage.setItem('token', data.data.token);
+};
+
+// 3. Obtener categorías (autenticado)
+const getCategories = async () => {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch('http://localhost:3000/api/live/categories', {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    }
   });
   
   const data = await response.json();
   console.log(data.data); // Array de categorías
 };
 
-// Obtener canales de una categoría
+// 4. Obtener canales de una categoría
 const getStreams = async (categoryId) => {
+  const token = localStorage.getItem('token');
+  
   const response = await fetch(`http://localhost:3000/api/live/streams/${categoryId}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      url: 'http://your-iptv-server.com:8080',
-      username: 'your_user',
-      password: 'your_pass'
-    })
+    headers: { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    }
   });
   
   const data = await response.json();
-  // Cada stream tiene su stream_url listo para reproducir
+  // stream_url listo para reproducir
   console.log(data.data[0].stream_url);
 };
 ```
 
-### Ejemplo con Axios
+### Ejemplo con Axios e Interceptores
 
 ```javascript
 import axios from 'axios';
@@ -453,21 +490,27 @@ const api = axios.create({
   baseURL: 'http://localhost:3000/api'
 });
 
+// Interceptor para añadir token automáticamente
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 // Login
-const credentials = {
-  url: 'http://your-iptv-server.com:8080',
-  username: 'your_user',
-  password: 'your_pass'
-};
+const { data } = await api.post('/auth/login', {
+  email: 'user@example.com',
+  password: 'password123'
+});
+localStorage.setItem('token', data.data.token);
 
-// Autenticar
-const { data } = await api.post('/login', credentials);
+// Obtener categorías (automáticamente añade el token)
+const categories = await api.post('/live/categories');
 
-// Obtener categorías VOD
-const vodCategories = await api.post('/vod/categories', credentials);
-
-// Obtener películas de una categoría
-const movies = await api.post('/vod/streams/1', credentials);
+// Obtener canales
+const streams = await api.post('/live/streams/1');
 ```
 
 ---
@@ -488,9 +531,11 @@ Todas las respuestas de error siguen este formato:
 | Código | Significado |
 |--------|-------------|
 | `200` | Petición exitosa |
+| `201` | Recurso creado exitosamente |
 | `400` | Parámetros faltantes o inválidos |
-| `401` | Credenciales inválidas |
+| `401` | No autenticado o token inválido |
 | `404` | Endpoint no encontrado |
+| `429` | Demasiadas peticiones (rate limit) |
 | `500` | Error interno del servidor |
 | `503` | No se puede conectar al servidor IPTV |
 | `504` | Timeout de conexión |
@@ -501,79 +546,78 @@ Todas las respuestas de error siguen este formato:
 
 ### El servidor no inicia
 
-```
-Error: Port 3000 is already in use
-```
-
-**Solución:** Cambia el puerto en `.env` o detén el proceso que está usando el puerto 3000:
+**Error: Port 3000 is already in use**
 
 ```bash
 # Linux/Mac
-lsof -ti:3000 | xargs kill -9
+fuser -k 3000/tcp
 
 # Cambiar puerto en .env
 PORT=3001
 ```
 
-### CORS Errors en el frontend
+---
 
-Si obtienes errores de CORS en la consola del navegador:
+### MongoDB no conecta
 
-1. Verifica que el backend esté corriendo
-2. Asegúrate de que estás haciendo peticiones a la URL correcta
-3. Si necesitas restringir orígenes específicos, edita `.env`:
+**Error: MongoNetworkError**
 
-```env
-ALLOWED_ORIGINS=http://localhost:8080,http://localhost:3001
+1. Verifica que MongoDB esté corriendo:
+```bash
+sudo systemctl status mongod  # Linux
+brew services list | grep mongodb  # macOS
 ```
 
-### Timeout de conexión
-
-Si recibes errores de timeout:
-
-1. Verifica que la URL del servidor IPTV sea correcta
-2. Comprueba tu conexión a internet
-3. Algunos servidores IPTV pueden estar caídos temporalmente
-
-### Credenciales inválidas
-
-```json
-{
-  "success": false,
-  "error": "Invalid credentials. Please check your username and password."
-}
+2. Si usas Docker:
+```bash
+docker ps | grep mongo
+docker start mongodb
 ```
 
-**Solución:** Verifica que el URL, usuario y contraseña del servidor Xtream Codes sean correctos.
+---
+
+### Redis no disponible
+
+Si Redis no está disponible, el backend funcionará pero sin caché. Para habilitarlo:
+
+```bash
+# Con Docker
+docker run -d -p 6379:6379 --name redis redis
+
+# Verificar conexión
+docker logs redis
+```
+
+---
+
+### Token JWT Expirado
+
+**Error: Token expired**
+
+El usuario debe hacer login nuevamente. Los tokens duran 7 días por defecto (configurable en `.env`).
 
 ---
 
 ## 🔐 Seguridad
 
-- Las credenciales se transmiten en cada petición desde el frontend
-- Se recomienda usar HTTPS en producción
-- No se almacenan credenciales en el backend
-- Implementa autenticación JWT si necesitas sesiones persistentes
+### Implementaciones de Seguridad
 
----
+- ✅ **Helmet** - Headers HTTP seguros
+- ✅ **Rate Limiting** - 100 peticiones por IP cada 15 minutos
+- ✅ **JWT Authentication** - Tokens seguros con expiración
+- ✅ **AES-256 Encryption** - Credenciales IPTV encriptadas en DB
+- ✅ **NoSQL Injection Protection** - Sanitización de inputs
+- ✅ **XSS Protection** - Limpieza de datos
+- ✅ **HPP Protection** - Protección contra parameter pollution
 
-## 📝 Notas Adicionales
+### Recomendaciones para Producción
 
-### URLs de Streaming
-
-Este backend construye automáticamente las URLs reproducibles para cada stream:
-
-- **Live TV:** `http://server:port/live/username/password/stream_id.ts`
-- **VOD:** `http://server:port/movie/username/password/stream_id.mp4`
-- **Series:** `http://server:port/series/username/password/stream_id.mp4`
-
-Estas URLs pueden ser usadas directamente en reproductores de video HTML5, HLS.js, Video.js, etc.
-
-### Performance
-
-- El backend usa Axios con timeout de 10 segundos
-- Las peticiones a la API Xtream son síncronas
-- Para mejor performance en producción, considera implementar caché (Redis)
+1. **HTTPS:** Usa siempre HTTPS en producción
+2. **JWT_SECRET:** Genera un secret fuerte y único
+3. **ENCRYPTION_KEY:** 32 caracteres aleatorios
+4. **CORS:** Especifica orígenes permitidos en `ALLOWED_ORIGINS`
+5. **MongoDB:** Habilita autenticación en producción
+6. **Logs:** Rotar logs periódicamente
 
 ---
 
@@ -584,7 +628,12 @@ Estas URLs pueden ser usadas directamente en reproductores de video HTML5, HLS.j
 ```env
 PORT=3000
 NODE_ENV=production
+MONGODB_URI=mongodb://user:pass@localhost:27017/iptv_backend
+JWT_SECRET=TuSecretSuperSeguroYAleatorio32Chars
+JWT_EXPIRES_IN=7d
+ENCRYPTION_KEY=32CaracteresAleatoriosParaAES256
 ALLOWED_ORIGINS=https://tu-frontend.com
+REDIS_URL=redis://localhost:6379
 ```
 
 ### Usando PM2 (Process Manager)
@@ -598,12 +647,73 @@ pm2 start server.js --name iptv-backend
 # Ver logs
 pm2 logs iptv-backend
 
+# Monitoreo
+pm2 monit
+
 # Reiniciar
 pm2 restart iptv-backend
 
-# Detener
-pm2 stop iptv-backend
+# Auto-start en boot
+pm2 startup
+pm2 save
 ```
+
+### Docker
+
+```bash
+# Build
+docker build -t iptv-backend .
+
+# Run
+docker run -d -p 3000:3000 \
+  --name iptv-backend \
+  -e MONGODB_URI=mongodb://host.docker.internal:27017/iptv_backend \
+  -e REDIS_URL=redis://host.docker.internal:6379 \
+  iptv-backend
+```
+
+---
+
+## 📊 Logs y Monitoreo
+
+Los logs se guardan en la carpeta `logs/`:
+
+- `logs/all.log` - Todos los logs
+- `logs/error.log` - Solo errores
+
+Formato JSON para fácil procesamiento:
+```json
+{
+  "level": "info",
+  "message": "GET /api/live/categories",
+  "timestamp": "2025-11-30 00:30:00:000"
+}
+```
+
+---
+
+## 📝 Notas Adicionales
+
+### URLs de Streaming
+
+El backend construye automáticamente las URLs reproducibles:
+
+- **Live TV:** `http://server:port/live/username/password/stream_id.ts`
+- **VOD:** `http://server:port/movie/username/password/stream_id.mp4`
+
+### Performance
+
+- **Redis Cache:** Las respuestas se cachean 5-10 minutos
+- **Compresión Gzip:** Reduce el tamaño de respuestas en ~70%
+- **Connection Pooling:** MongoDB usa pooling automático
+
+### Diferencias con Versión Anterior
+
+**IMPORTANTE:** Esta versión usa autenticación con JWT y MongoDB. La versión anterior (stateless) ya no es compatible.
+
+**Cambios principales:**
+- ❌ **Antes:** Enviar credenciales IPTV en cada petición
+- ✅ **Ahora:** Registrarse una vez, usar token JWT
 
 ---
 
@@ -619,4 +729,4 @@ Para reportar problemas o solicitar funcionalidades, por favor abre un issue en 
 
 ---
 
-**Desarrollado con ❤️ usando Node.js + Express**
+**Desarrollado con ❤️ usando Node.js + Express + MongoDB + Redis**
