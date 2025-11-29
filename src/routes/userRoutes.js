@@ -1,27 +1,82 @@
 const express = require('express');
+const router = express.Router();
 const userController = require('../controllers/userController');
 const auth = require('../middleware/auth');
-const { registerValidator, loginValidator, updateIptvCredentialsValidator } = require('../validators/authValidator');
-
-const router = express.Router();
+const { registerValidator, loginValidator, updateCredentialsValidator } = require('../validators/authValidator');
 
 /**
- * POST /api/auth/register
- * Registrar un nuevo usuario
- * Body: { email, password, iptv_url, iptv_username, iptv_password }
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: User management and authentication
+ */
+
+/**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *               - iptv_url
+ *               - iptv_username
+ *               - iptv_password
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               iptv_url:
+ *                 type: string
+ *               iptv_username:
+ *                 type: string
+ *               iptv_password:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *       400:
+ *         description: Validation error
  */
 router.post('/register', registerValidator, userController.register);
 
 /**
- * POST /api/auth/login
- * Iniciar sesión
- * Body: { email, password }
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Login user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       401:
+ *         description: Invalid credentials
  */
 router.post('/login', loginValidator, userController.login);
 
 /**
- * GET /api/auth/profile
- * Obtener perfil del usuario autenticado
  * Header: Authorization: Bearer <token>
  */
 router.get('/profile', auth, userController.getProfile);
@@ -32,7 +87,7 @@ router.get('/profile', auth, userController.getProfile);
  * Header: Authorization: Bearer <token>
  * Body: { iptv_url?, iptv_username?, iptv_password? }
  */
-router.put('/iptv-credentials', auth, updateIptvCredentialsValidator, userController.updateIptvCredentials);
+router.put('/iptv-credentials', auth, updateCredentialsValidator, userController.updateIptvCredentials);
 
 /**
  * DELETE /api/auth/account
