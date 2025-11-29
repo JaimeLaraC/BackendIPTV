@@ -13,13 +13,19 @@ const server = app.listen(PORT, () => {
     console.log(`🔗 Health check: http://localhost:${PORT}/health`);
     console.log('═══════════════════════════════════════════════════════');
     console.log('Available endpoints:');
-    console.log('  POST /api/login');
-    console.log('  POST /api/live/categories');
-    console.log('  POST /api/live/streams');
-    console.log('  POST /api/live/streams/:category_id');
-    console.log('  POST /api/vod/categories');
-    console.log('  POST /api/vod/streams/:category_id');
-    console.log('  POST /api/vod/info/:vod_id');
+    console.log('  AUTH:');
+    console.log('    POST /api/auth/register');
+    console.log('    POST /api/auth/login');
+    console.log('    GET /api/auth/profile (requires JWT)');
+    console.log('    PUT /api/auth/iptv-credentials (requires JWT)');
+    console.log('  LIVE TV (requires JWT):');
+    console.log('    POST /api/live/categories');
+    console.log('    POST /api/live/streams');
+    console.log('    POST /api/live/streams/:category_id');
+    console.log('  VOD (requires JWT):');
+    console.log('    POST /api/vod/categories');
+    console.log('    POST /api/vod/streams/:category_id');
+    console.log('    POST /api/vod/info/:vod_id');
     console.log('═══════════════════════════════════════════════════════');
 });
 

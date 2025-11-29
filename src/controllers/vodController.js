@@ -8,22 +8,19 @@ class VodController {
     /**
      * Obtiene todas las categorías de VOD
      * POST /api/vod/categories
-     * Body: { url, username, password }
+     * Header: Authorization: Bearer <token>
      */
     async getCategories(req, res, next) {
         try {
-            const { url, username, password } = req.body;
-
-            // Validar parámetros
-            if (!url || !username || !password) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Missing required parameters: url, username, password'
-                });
-            }
+            // Obtener credenciales del usuario autenticado
+            const credentials = req.user.getDecryptedCredentials();
 
             // Obtener categorías VOD
-            const categories = await xtreamService.getVodCategories(url, username, password);
+            const categories = await xtreamService.getVodCategories(
+                credentials.url,
+                credentials.username,
+                credentials.password
+            );
 
             return res.status(200).json({
                 success: true,
@@ -39,20 +36,11 @@ class VodController {
     /**
      * Obtiene los streams VOD de una categoría específica
      * POST /api/vod/streams/:category_id
-     * Body: { url, username, password }
+     * Header: Authorization: Bearer <token>
      */
     async getStreams(req, res, next) {
         try {
             const { category_id } = req.params;
-            const { url, username, password } = req.body;
-
-            // Validar parámetros
-            if (!url || !username || !password) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Missing required parameters: url, username, password'
-                });
-            }
 
             if (!category_id) {
                 return res.status(400).json({
@@ -61,15 +49,23 @@ class VodController {
                 });
             }
 
+            // Obtener credenciales del usuario autenticado
+            const credentials = req.user.getDecryptedCredentials();
+
             // Obtener streams VOD
-            const streams = await xtreamService.getVodStreams(url, username, password, category_id);
+            const streams = await xtreamService.getVodStreams(
+                credentials.url,
+                credentials.username,
+                credentials.password,
+                category_id
+            );
 
             // Enriquecer cada stream con la URL reproducible
             const enrichedStreams = streams.map(stream => {
                 const streamUrl = urlBuilder.buildVodUrl(
-                    url,
-                    username,
-                    password,
+                    credentials.url,
+                    credentials.username,
+                    credentials.password,
                     stream.stream_id || stream.id,
                     stream.container_extension || 'mp4'
                 );
@@ -77,8 +73,8 @@ class VodController {
                 return {
                     ...stream,
                     stream_url: streamUrl,
-                    cover_url: stream.stream_icon ? urlBuilder.buildIconUrl(url, stream.stream_icon) : null,
-                    backdrop_url: stream.backdrop_path ? urlBuilder.buildIconUrl(url, stream.backdrop_path) : null
+                    cover_url: stream.stream_icon ? urlBuilder.buildIconUrl(credentials.url, stream.stream_icon) : null,
+                    backdrop_url: stream.backdrop_path ? urlBuilder.buildIconUrl(credentials.url, stream.backdrop_path) : null
                 };
             });
 
@@ -97,20 +93,11 @@ class VodController {
     /**
      * Obtiene información detallada de un VOD específico
      * POST /api/vod/info/:vod_id
-     * Body: { url, username, password }
+     * Header: Authorization: Bearer <token>
      */
     async getInfo(req, res, next) {
         try {
             const { vod_id } = req.params;
-            const { url, username, password } = req.body;
-
-            // Validar parámetros
-            if (!url || !username || !password) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Missing required parameters: url, username, password'
-                });
-            }
 
             if (!vod_id) {
                 return res.status(400).json({
@@ -119,23 +106,31 @@ class VodController {
                 });
             }
 
+            // Obtener credenciales del usuario autenticado
+            const credentials = req.user.getDecryptedCredentials();
+
             // Obtener información del VOD
-            const vodInfo = await xtreamService.getVodInfo(url, username, password, vod_id);
+            const vodInfo = await xtreamService.getVodInfo(
+                credentials.url,
+                credentials.username,
+                credentials.password,
+                vod_id
+            );
 
             // Enriquecer con URLs si tiene info del stream
             if (vodInfo.info) {
                 vodInfo.info.cover_url = vodInfo.info.cover ?
-                    urlBuilder.buildIconUrl(url, vodInfo.info.cover) : null;
+                    urlBuilder.buildIconUrl(credentials.url, vodInfo.info.cover) : null;
                 vodInfo.info.backdrop_url = vodInfo.info.backdrop_path ?
-                    urlBuilder.buildIconUrl(url, vodInfo.info.backdrop_path) : null;
+                    urlBuilder.buildIconUrl(credentials.url, vodInfo.info.backdrop_path) : null;
             }
 
             // Agregar URL de reproducción si tiene movie_data
             if (vodInfo.movie_data) {
                 vodInfo.movie_data.stream_url = urlBuilder.buildVodUrl(
-                    url,
-                    username,
-                    password,
+                    credentials.url,
+                    credentials.username,
+                    credentials.password,
                     vodInfo.movie_data.stream_id,
                     vodInfo.movie_data.container_extension || 'mp4'
                 );
