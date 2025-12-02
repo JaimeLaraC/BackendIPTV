@@ -58,6 +58,7 @@ const registerValidator = [
  */
 const loginValidator = [
     body('email')
+        .optional()
         .isEmail()
         .withMessage('Please provide a valid email address')
         .normalizeEmail(),

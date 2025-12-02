@@ -66,9 +66,66 @@ class UserController {
      */
     async login(req, res, next) {
         try {
-            const { email, password } = req.body;
+            const { email, password, username, url } = req.body;
 
-            // Buscar usuario por email (incluir password que está en select: false)
+            // SCENARIO 1: Login with Xtream Credentials (URL provided)
+            if (url && username) {
+                const xtreamService = require('../services/xtreamService');
+
+                // 1. Authenticate with Xtream API
+                try {
+                    await xtreamService.authenticate(url, username, password);
+                } catch (err) {
+                    return res.status(401).json({
+                        success: false,
+                        error: 'Invalid Xtream credentials or server unreachable: ' + err.message
+                    });
+                }
+
+                // 2. Create or Update "Shadow" User
+                // We use a dummy email to satisfy the model's unique email constraint
+                const shadowEmail = `${username}@xtream.local`; // e.g., 4c47a8916ddf@xtream.local
+
+                let user = await User.findOne({ email: shadowEmail });
+
+                if (user) {
+                    // Update credentials if they changed
+                    user.iptv_credentials = { url, username, password };
+                    user.password = password; // Update local password too
+                    await user.save();
+                } else {
+                    // Create new user
+                    user = await User.create({
+                        email: shadowEmail,
+                        password: password,
+                        iptv_credentials: { url, username, password }
+                    });
+                }
+
+                // 3. Generate Token
+                const token = generateToken({ userId: user._id });
+
+                return res.status(200).json({
+                    success: true,
+                    message: 'Login successful via Xtream',
+                    data: {
+                        token,
+                        user: {
+                            id: user._id,
+                            email: user.email
+                        }
+                    }
+                });
+            }
+
+            // SCENARIO 2: Standard Local Login (Email/Password)
+            if (!email) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Email or Xtream credentials required'
+                });
+            }
+
             const user = await User.findOne({ email }).select('+password');
 
             if (!user) {
@@ -78,7 +135,6 @@ class UserController {
                 });
             }
 
-            // Verificar password
             const isPasswordValid = await user.comparePassword(password);
 
             if (!isPasswordValid) {
@@ -88,10 +144,8 @@ class UserController {
                 });
             }
 
-            // Generar token JWT
             const token = generateToken({ userId: user._id });
 
-            // Responder con token
             return res.status(200).json({
                 success: true,
                 message: 'Login successful',
